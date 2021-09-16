@@ -169,18 +169,16 @@ impl<'a> Visitor<'a> for Codegen<'a> {
                     self.chunk.write_chunk(OpCode::LdGlobal, line);
                     self.chunk
                         .add_debug_annotation_at_last(format!("load global variable {}", ident));
-                    self.chunk.write_chunk(resolved_symbol.offset as u8, line);
                 } else if resolved_symbol.is_upvalue {
                     self.chunk.write_chunk(OpCode::LdUpVal, line);
                     self.chunk
                         .add_debug_annotation_at_last(format!("load upvalue {}", ident));
-                    self.chunk.write_chunk(resolved_symbol.offset as u8, line);
                 } else {
                     self.chunk.write_chunk(OpCode::LdLoc, line);
                     self.chunk
                         .add_debug_annotation_at_last(format!("load local variable {}", ident));
-                    self.chunk.write_chunk(resolved_symbol.offset as u8, line);
                 }
+                self.chunk.write_chunk(resolved_symbol.offset as u8, line);
             }
             ExprKind::FnCall { callee, args } => {
                 let arity = args.len() as u8;
@@ -327,8 +325,8 @@ impl<'a> Visitor<'a> for Codegen<'a> {
                 let fn_chunk = {
                     let mut cg = Codegen::new(
                         ident.clone(),
-                        &self.resolve_result,
-                        &self.typecheck_result,
+                        self.resolve_result,
+                        self.typecheck_result,
                         self.source,
                     );
                     for stmt in body {
@@ -392,7 +390,7 @@ impl<'a> Visitor<'a> for Codegen<'a> {
                     let mut cg = Codegen::new(
                         ident.clone(),
                         self.resolve_result,
-                        &self.typecheck_result,
+                        self.typecheck_result,
                         self.source,
                     );
                     cg.codegen_function(stmt);
