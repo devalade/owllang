@@ -5,6 +5,10 @@ use std::fmt;
 use std::ops::Range;
 use std::rc::Rc;
 
+use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::files::SimpleFiles;
+use codespan_reporting::term;
+use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use console::style;
 
 /// Represents source code.
@@ -108,6 +112,13 @@ impl SyntaxError {
         self.help.push(message.to_string());
         self
     }
+
+    fn into_diagnostic(&self) -> Diagnostic<usize> {
+        let d = Diagnostic::error()
+            .with_message(&self.message)
+            .with_labels(self.help.iter().map(|x| Label::primary(0, 0..0)).collect());
+        d
+    }
 }
 
 /// Manages all the errors.
@@ -128,6 +139,20 @@ impl ErrorReporter {
     pub fn add_error(&self, error: SyntaxError) {
         // This should be the only place where self.errors is borrowed mutably.
         self.errors.borrow_mut().push(error);
+    }
+
+    pub fn print_errors_to_stderr(&self) {
+        let writer = StandardStream::stderr(ColorChoice::Always);
+        let config = codespan_reporting::term::Config::default();
+
+        let mut files = SimpleFiles::new();
+        files.add("source", "");
+
+        for e in self.errors.borrow().iter() {
+            let diagnostic = e.into_diagnostic();
+            term::emit(&mut writer.lock(), &config, &files, &diagnostic)
+                .expect("cannot emit errors to stderr");
+        }
     }
 }
 

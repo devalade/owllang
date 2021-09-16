@@ -107,7 +107,8 @@ fn repl() {
         type_checker.type_check_global(&ast);
         type_check_result = type_checker.into_type_check_result();
 
-        eprintln!("{}", source);
+        // eprintln!("{}", source);
+        source.errors.print_errors_to_stderr();
         if source.has_no_errors() {
             let mut codegen = Codegen::new(
                 "<global>".to_string(),
